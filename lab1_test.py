@@ -5,18 +5,24 @@ from multiprocessing import Pool
 from matplotlib import pyplot as plot
 from time import time
 
+# IMPORTANT: mnist.init() should be called the first time you run this script
 # mnist.init()
+# convert type of numpy array elements into int16, avoiding subtraction overflow
 train_images, train_labels, test_images, test_labels = map(lambda x: x.astype(np.int16), mnist.load())
-workers = 6
-test_size = test_images.shape[0]
-chunk_size = 20
-chunks_num = 12
+
+# initializing multi-process options
+workers = 6  # IMPORTANT: should be number of physical cores of your PC
+test_size = test_images.shape[0]  # 10000
+chunk_size = 20  # size of each chunk
+chunks_num = 12  # total number of chunks
 chunks = [
     [test_images[i:i + chunk_size], test_labels[i:i + chunk_size]
      ] for i in range(0, test_size, chunk_size)
-]
+]  # split testing set into chunks for multi-process calculating
 
 
+# run KNN on a specific chunk
+# knn is an instance of KNNClassifier
 def process(knn, chunk, chunk_id):
     print("chunk", chunk_id, "starts")
     images, labels = chunk;
@@ -32,10 +38,12 @@ def process(knn, chunk, chunk_id):
     return misclassified
 
 
+# run KNN with specific k on all testing set
 def run_knn(k):
     knn = KNNClassifier(k)
     knn.fit(train_images, train_labels)
 
+    # multi-process
     pool = Pool(processes=workers)
     result = []
     for cid, chunk in enumerate(chunks[0:chunks_num]):
@@ -43,13 +51,14 @@ def run_knn(k):
     pool.close()
     pool.join()
 
-    total_misclassified = 0
+    total_misclassified = 0  # number of total misclassified test case
     for i in result:
         total_misclassified += i.get()
     percent = total_misclassified / (chunks_num * chunk_size);
     return percent
 
 
+# draw plot of misclassification rate with different k
 def make_plot(x_list, y_list):
     plot.figure('misclassification rate')
     plot.title("misclassification rate with different k")
@@ -64,15 +73,15 @@ def make_plot(x_list, y_list):
 
 how_many_k = 20;
 percents = []
-percents_range = range(2, 1 + how_many_k)
+percents_range = range(1, 1 + how_many_k)
 start_time = time()
 for i in percents_range:
     percent = run_knn(i)
     end_time = time()
-    print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent,end_time-start_time))
+    print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent, end_time - start_time))
     percents.append(percent)
 
 end_time = time()
-print(end_time-start_time)
+print(end_time - start_time)
 
 make_plot(percents_range, percents)
