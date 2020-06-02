@@ -37,9 +37,10 @@ def save_mnist():
 
 
 def init():
+    if exists("./mnist.pkl"):
+        return
     download_mnist()
     save_mnist()
-
 
 def load():
     with open("mnist.pkl", 'rb') as f:

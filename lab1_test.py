@@ -6,11 +6,18 @@ from matplotlib import pyplot as plot
 from time import time
 
 # IMPORTANT: mnist.init() should be called the first time you run this script
-# mnist.init()
+mnist.init()
 # convert type of numpy array elements into int16, avoiding subtraction overflow
 train_images, train_labels, test_images, test_labels = map(lambda x: x.astype(np.int16), mnist.load())
 
 # initializing multi-process options
+# in Unix-like OS, multiprocessing is implemented based on fork().
+# to take advantage of COW, knn instance and chunks should be global.
+# by using COW, memory cost can be reduced to 1/workers.
+# so multiprocessing.SharedMemory is no longer needed xD
+# however, such optimization may not work in Windows :(
+knn = KNNClassifier(1)
+knn.fit(train_images, train_labels)
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 test_size = test_images.shape[0]  # 10000
 chunk_size = 20  # size of each chunk
@@ -23,11 +30,11 @@ chunks = [
 
 # run KNN on a specific chunk
 # knn is an instance of KNNClassifier
-def process(knn, chunk, chunk_id):
+def process(chunk_id):
     print("chunk", chunk_id, "starts")
-    images, labels = chunk;
+    images, labels = chunks[chunk_id]
     length = images.shape[0]
-    misclassified = 0;
+    misclassified = 0
     for i in range(length):
         x = np.array([images[i]])
         res = knn.predict(x)[0]
@@ -40,21 +47,23 @@ def process(knn, chunk, chunk_id):
 
 # run KNN with specific k on all testing set
 def run_knn(k):
-    knn = KNNClassifier(k)
-    knn.fit(train_images, train_labels)
-
+    knn.set_k(k)
     # multi-process
     pool = Pool(processes=workers)
+    # pool = Pool()  # use all core by default
     result = []
+    # mapping
     for cid, chunk in enumerate(chunks[0:chunks_num]):
-        result.append(pool.apply_async(process, args=(knn, chunk, cid)))
+        # the reason why pass chunk_id instead of chunk to process() here
+        # is to avoid additional memory copy caused
+        result.append(pool.apply_async(process, args=(cid,)))
     pool.close()
     pool.join()
-
+    # reducing
     total_misclassified = 0  # number of total misclassified test case
     for i in result:
         total_misclassified += i.get()
-    percent = total_misclassified / (chunks_num * chunk_size);
+    percent = total_misclassified / (chunks_num * chunk_size)
     return percent
 
 
@@ -71,7 +80,7 @@ def make_plot(x_list, y_list):
     plot.show()
 
 
-how_many_k = 20;
+how_many_k = 20
 percents = []
 percents_range = range(1, 1 + how_many_k)
 start_time = time()
