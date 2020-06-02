@@ -1,0 +1,6 @@
+$HOME
+__pycache__
+.idea
+dataset
+*.gz
+mnist*.pkl
