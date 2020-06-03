@@ -1,7 +1,7 @@
 from collections import Counter
 import numpy as np
 from queue import PriorityQueue
-
+from sklearn.neighbors import BallTree as SKBallTree
 
 def first(q: PriorityQueue):
     return q.queue[0][1]
@@ -59,12 +59,13 @@ class BallTree:
 
 class KNNClassifier:
 
-    def __init__(self, k):
+    def __init__(self, k, type=None):
         assert k >= 1, "k should be more than 0"
         self._data = None
         self._labels = None
         self.k = k
         self.ball_tree = None
+        self.type = type
 
     def set_k(self, k):
         self.k = k
@@ -83,7 +84,12 @@ class KNNClassifier:
             "fit should be called first"
         assert x_list.shape[1] == self._data.shape[1], \
             "the number of features should be equal"
-        predict_res = [self._predict_ball_tree(x) for x in x_list]
+        predict = self._predict_brute
+        if self.type == "naive":
+            predict = self._predict_ball_tree
+        elif self.type == "sklearn":
+            predict = self._predict_sklearn
+        predict_res = [predict(x) for x in x_list]
         return np.array(predict_res)
 
     # brutal predict an element
@@ -94,42 +100,26 @@ class KNNClassifier:
         distances = [np.linalg.norm(x - train) for train in self._data]
         nearest = np.argsort(distances)  # argsort returns indexes of elements in ASC
         k_labels = [self._labels[i] for i in nearest[:self.k]]
-        return Counter(k_labels).most_common(1)[0][0]  # return the most common label
-
-    #  function knn_search is
-    #      input:
-    #          t, the target point for the query
-    #          k, the number of nearest neighbors of t to search for
-    #          Q, max-first priority queue containing at most k points
-    #          B, a node, or ball, in the tree
-    #      output:
-    #          Q, containing the k nearest neighbors from within B
-    #      if distance(t, B.pivot) - B.radius ≥ distance(t, Q.first) then
-    #          return Q unchanged
-    #      else if B is a leaf node then
-    #          for each point p in B do
-    #              if distance(t, p) < distance(t, Q.first) then
-    #                  add p to Q
-    #                  if size(Q) > k then
-    #                      remove the furthest neighbor from Q
-    #                  end if
-    #              end if
-    #          repeat
-    #      else
-    #          let child1 be the child node closest to t
-    #          let child2 be the child node furthest from t
-    #          knn_search(t, k, Q, child1)
-    #          knn_search(t, k, Q, child2)
-    #      end if
-    #  end function
+        return Counter(k_labels).most_common(1)[0][0]  # return the most common label\
 
     # TODO: use ball tree to predict an element, which takes much less time
-    def init_ball_tree(self):
+    def init_tree(self, type="sklearn"):
         if self.ball_tree is None:
-            self.ball_tree = BallTree(self._data, self._labels)
+            if type == "sklearn":
+                self.ball_tree = SKBallTree(self._data)
+            elif type == "naive":
+                self.ball_tree = BallTree(self._data, self._labels)
+            self.type = type
+
+    def _predict_sklearn(self, t):
+        assert self.ball_tree is not None, "init_tree() should be called first"
+        dist, indices = self.ball_tree.query([t], self.k)
+        # labels = map(lambda i: self._labels[i], indices)
+        k_labels = [self._labels[i] for i in indices[0]]
+        return Counter(k_labels).most_common(1)[0][0]  # return the most common label
 
     def _predict_ball_tree(self, t):
-        self.init_ball_tree()
+        assert self.ball_tree is not None, "init_tree() should be called first"
         q = PriorityQueue()
         q.put((1, np.array([np.inf for i in range(785)])))
         self._predict_ball_tree_helper(t, q, self.ball_tree.root)
@@ -138,8 +128,7 @@ class KNNClassifier:
         while not q.empty():
             res.append(q.get()[-1][-1])
 
-        c = Counter(np.array(res)).most_common(1)[0][0]  # return the most common label
-        return c
+        return Counter(np.array(res)).most_common(1)[0][0]  # return the most common label
 
     def _predict_ball_tree_helper(self, t, q: PriorityQueue, b: Ball):
         distance_c_t = np.linalg.norm(t - b.center)
@@ -148,7 +137,6 @@ class KNNClassifier:
         elif b.left is None and b.right is None:
             for p in b.tuples:
                 distance_p_t = np.linalg.norm(t - p[:-1])
-                # print(distance_p_t)
                 if distance_p_t < np.linalg.norm(t - first(q)[:-1]):
                     q.put((-distance_p_t, p))
                     if q.qsize() > self.k:

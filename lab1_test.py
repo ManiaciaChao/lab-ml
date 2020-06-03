@@ -1,9 +1,12 @@
+import pickle
+
 import numpy as np
 from lab1.KNN import KNNClassifier
 import mnist
 from multiprocessing import Pool
 from matplotlib import pyplot as plot
 from time import time
+from os.path import exists
 
 # IMPORTANT: mnist.init() should be called the first time you run this script
 mnist.init()
@@ -20,8 +23,8 @@ knn = KNNClassifier(1)
 knn.fit(train_images, train_labels)
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 test_size = test_images.shape[0]  # 10000
-chunk_size = 20  # size of each chunk
-chunks_num = 12  # total number of chunks
+chunk_size = 100  # size of each chunk
+chunks_num = 100  # total number of chunks
 chunks = [
     [test_images[i:i + chunk_size], test_labels[i:i + chunk_size]
      ] for i in range(0, test_size, chunk_size)
@@ -79,18 +82,39 @@ def make_plot(x_list, y_list):
     ax.scatter(x_list, y_list, c='b', s=20, alpha=0.5)
     plot.show()
 
+def main():
+    how_many_k = 20
+    percents = []
+    percents_range = range(1, 1 + how_many_k)
+    start_time = time()
+    for i in percents_range:
+        percent = run_knn(i)
+        end_time = time()
+        print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent, end_time - start_time))
+        percents.append(percent)
 
-how_many_k = 20
-percents = []
-percents_range = range(1, 1 + how_many_k)
-start_time = time()
-for i in percents_range:
-    percent = run_knn(i)
     end_time = time()
-    print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent, end_time - start_time))
-    percents.append(percent)
+    print(end_time - start_time)
+    make_plot(percents_range, percents)
 
-end_time = time()
-print(end_time - start_time)
 
-make_plot(percents_range, percents)
+def init_tree(type="sklearn"):
+    start_time = time()
+    if exists(type+".pkl"):
+        print(type + " dump found! loading...")
+        knn.type = type
+        with open(type+".pkl", 'rb') as f:
+            knn.ball_tree = pickle.load(f)
+    else:
+        print(type + " dump not found! creating...")
+        knn.init_tree(type)
+        with open(type+".pkl", 'wb') as f:
+            pickle.dump(knn.ball_tree, f)
+    end_time = time()
+    print("initializing takes {:f} sec".format(end_time - start_time))
+
+
+init_tree()
+main()
+
+
