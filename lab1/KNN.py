@@ -28,11 +28,11 @@ class BallTree:
         if len(tuples) == 0:
             return None;
         if len(tuples) == 1:
-            return Ball(center=tuples[0], tuples=tuples,
+            return Ball(center=tuples[0][:-1], tuples=tuples,
                         radius=0, left=None, right=None)
         aaa = np.all(tuples == tuples[0], axis=1)
         if np.all(aaa):
-            return Ball(center=tuples[0], tuples=tuples,
+            return Ball(center=tuples[0][:-1], tuples=tuples,
                         radius=0, left=None, right=None)
         avg = np.mean(tuples[:, :-1], axis=0)
         n2_avg_list = [np.linalg.norm(pt - avg) for pt in tuples[:, :-1]]
@@ -47,9 +47,12 @@ class BallTree:
         pt2 = tuples[n2_pt1_max]
         n2_pt2_list = np.array([np.linalg.norm(pt - pt2[:-1]) for pt in tuples[:, :-1]])
 
-        mask = n2_pt1_list > n2_pt2_list
-        root.left = BallTree.build(tuples[mask])
-        root.right = BallTree.build(tuples[~mask])
+        mask = n2_pt1_list < n2_pt2_list
+        pt1_pts = tuples[mask]
+        pt2_pts = tuples[~mask]
+        print(len(pt1_pts), len(pt2_pts))
+        root.left = BallTree.build(pt1_pts)
+        root.right = BallTree.build(pt2_pts)
 
         return root
 
@@ -80,7 +83,7 @@ class KNNClassifier:
             "fit should be called first"
         assert x_list.shape[1] == self._data.shape[1], \
             "the number of features should be equal"
-        predict_res = [self._predict_brute(x) for x in x_list]
+        predict_res = [self._predict_ball_tree(x) for x in x_list]
         return np.array(predict_res)
 
     # brutal predict an element
@@ -121,19 +124,38 @@ class KNNClassifier:
     #  end function
 
     # TODO: use ball tree to predict an element, which takes much less time
-    def _predict_ball_tree(self, t, k, q: PriorityQueue, b: Ball):
+    def init_ball_tree(self):
         if self.ball_tree is None:
             self.ball_tree = BallTree(self._data, self._labels)
-        if (np.linalg.norm(t - b.center) - b.radius) >= np.linalg.norm(t - first(q)):
-            return q
+
+    def _predict_ball_tree(self, t):
+        self.init_ball_tree()
+        q = PriorityQueue()
+        q.put((1, np.array([np.inf for i in range(785)])))
+        self._predict_ball_tree_helper(t, q, self.ball_tree.root)
+        res = []
+
+        while not q.empty():
+            res.append(q.get()[-1][-1])
+
+        c = Counter(np.array(res)).most_common(1)[0][0]  # return the most common label
+        return c
+
+    def _predict_ball_tree_helper(self, t, q: PriorityQueue, b: Ball):
+        distance_c_t = np.linalg.norm(t - b.center)
+        if distance_c_t >= b.radius+np.linalg.norm(t - first(q)[:-1]):
+            return
         elif b.left is None and b.right is None:
             for p in b.tuples:
-                distance_p_t = np.linalg.norm(t - p[:-1]);
-                if distance_p_t < np.linalg.norm(t - first[q][:-1]):
+                distance_p_t = np.linalg.norm(t - p[:-1])
+                # print(distance_p_t)
+                if distance_p_t < np.linalg.norm(t - first(q)[:-1]):
                     q.put((-distance_p_t, p))
                     if q.qsize() > self.k:
                         q.get()
         else:
-            q = self._predict_ball_tree(t, k, q, b.left)
-            q = self._predict_ball_tree(t, k, q, b.child)
-        return q
+            self._predict_ball_tree_helper(t, q, b.left)
+            self._predict_ball_tree_helper(t, q, b.right)
+
+        # print(q.qsize())
+
