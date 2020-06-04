@@ -1,12 +1,11 @@
 import pickle
-
 import numpy as np
-from lab1.KNN import KNNClassifier
 import mnist
 from multiprocessing import Pool
 from matplotlib import pyplot as plot
 from time import time
 from os.path import exists
+from lab1.KNN import KNNClassifier
 
 # IMPORTANT: mnist.init() should be called the first time you run this script
 mnist.init()
@@ -23,8 +22,8 @@ knn = KNNClassifier(1)
 knn.fit(train_images, train_labels)
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 test_size = test_images.shape[0]  # 10000
-chunk_size = 100  # size of each chunk
-chunks_num = 100  # total number of chunks
+chunk_size = 30  # size of each chunk
+chunks_num = 30  # total number of chunks
 chunks = [
     [test_images[i:i + chunk_size], test_labels[i:i + chunk_size]
      ] for i in range(0, test_size, chunk_size)
@@ -113,8 +112,10 @@ def init_tree(type="sklearn"):
     end_time = time()
     print("initializing takes {:f} sec".format(end_time - start_time))
 
-
-init_tree()
-main()
+# in Windows, multiprocess-related functions
+# should always be called in __main__ scope
+if __name__ == "__main__":
+    init_tree()
+    main()
 
 

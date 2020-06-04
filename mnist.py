@@ -15,7 +15,7 @@ filename = [
 def download_mnist():
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for name in filename:
-        if exists("./" + name):
+        if exists(name[1]):
             print("Already have " + name[1] + ".!.")
         else:
             print("Downloading " + name[1] + "...")
@@ -37,7 +37,7 @@ def save_mnist():
 
 
 def init():
-    if exists("./mnist.pkl"):
+    if exists("mnist.pkl"):
         return
     download_mnist()
     save_mnist()
