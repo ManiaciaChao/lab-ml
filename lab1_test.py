@@ -2,10 +2,11 @@ import pickle
 import numpy as np
 import mnist
 from multiprocessing import Pool
-from matplotlib import pyplot as plot
+from matplotlib import pyplot as plt
 from time import time
 from os.path import exists
 from lab1.KNN import KNNClassifier
+from random import randrange
 
 # IMPORTANT: mnist.init() should be called the first time you run this script
 mnist.init()
@@ -72,30 +73,15 @@ def run_knn(k):
 
 # draw plot of misclassification rate with different k
 def make_plot(x_list, y_list):
-    plot.figure('misclassification rate')
-    plot.title("misclassification rate with different k")
-    ax = plot.gca()
+    plt.figure('misclassification rate')
+    plt.title("misclassification rate with different k")
+    ax = plt.gca()
     ax.set_xlabel('k')
     ax.set_ylabel('misclassification rate')
     # ax.set_ylim(bottom=0,top=20)
     ax.plot(x_list, y_list, color='b', linewidth=1, alpha=0.6)
     ax.scatter(x_list, y_list, c='b', s=20, alpha=0.5)
-    plot.show()
-
-def main():
-    how_many_k = 20
-    percents = []
-    percents_range = range(1, 1 + how_many_k)
-    start_time = time()
-    for i in percents_range:
-        percent = run_knn(i)
-        end_time = time()
-        print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent, end_time - start_time))
-        percents.append(percent)
-
-    end_time = time()
-    print(end_time - start_time)
-    make_plot(percents_range, percents)
+    plt.show()
 
 
 def init_tree(type="sklearn"):
@@ -113,10 +99,46 @@ def init_tree(type="sklearn"):
     end_time = time()
     print("initializing takes {:f} sec".format(end_time - start_time))
 
+
+def displayImages(data_list):
+    size = 28
+    fig = plt.figure()
+    columns = len(data_list)
+    rows = 1
+    for index, data in enumerate(data_list):
+        img = np.array(data, dtype='float').reshape((size, size))
+        fig.add_subplot(rows, columns, index+1)
+        plt.imshow(img,cmap='gray')
+        plt.axis('off')
+    plt.show()
+
+
+def show_most_similar(id):
+    target = test_images[id]
+    nearest_k = knn._nearest_k_brute(target)
+    most_similar = train_images[nearest_k[0]]
+    displayImages([target,most_similar])
+
+
+def show_misrate():
+    how_many_k = 20
+    percents = []
+    percents_range = range(1, 1 + how_many_k)
+    start_time = time()
+    for i in percents_range:
+        percent = run_knn(i)
+        end_time = time()
+        print('k={:d}, mis_rate={:f}, t={:f}'.format(i, percent, end_time - start_time))
+        percents.append(percent)
+
+    end_time = time()
+    print(end_time - start_time)
+    make_plot(percents_range, percents)
+
+
 # in Windows, multiprocess-related functions
 # should always be called in __main__ scope
 if __name__ == "__main__":
     init_tree()
-    main()
-
-
+    show_most_similar(randrange(test_size))
+    show_misrate()

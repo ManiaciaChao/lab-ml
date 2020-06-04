@@ -94,13 +94,18 @@ class KNNClassifier:
 
     # brutal predict an element
     def _predict_brute(self, x):
+        k_nearest = self._nearest_k_brute(x)
+        k_labels = [self._labels[i] for i in k_nearest]
+        return Counter(k_labels).most_common(1)[0][0]  # return the most common label
+
+    # brutal get nearest k elements
+    def _nearest_k_brute(self, x):
         assert x.shape[0] == self._data.shape[1], \
             "the number of features should be equal"
         # if np.dtype is uint, then below could cause problems
         distances = [np.linalg.norm(x - train) for train in self._data]
-        nearest = np.argsort(distances)  # argsort returns indexes of elements in ASC
-        k_labels = [self._labels[i] for i in nearest[:self.k]]
-        return Counter(k_labels).most_common(1)[0][0]  # return the most common label\
+        k_nearest = np.argsort(distances)[:self.k]  # argsort returns indices of elements in ASC
+        return k_nearest  # return the nearest k indices
 
     # TODO: use ball tree to predict an element, which takes much less time
     def init_tree(self, type="sklearn"):
