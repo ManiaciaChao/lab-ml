@@ -22,8 +22,8 @@ knn = KNNClassifier(1)
 knn.fit(train_images, train_labels)
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 test_size = test_images.shape[0]  # 10000
-chunk_size = 30  # size of each chunk
-chunks_num = 30  # total number of chunks
+chunk_size = 10  # size of each chunk
+chunks_num = 10  # total number of chunks
 chunks = [
     [test_images[i:i + chunk_size], test_labels[i:i + chunk_size]
      ] for i in range(0, test_size, chunk_size)
@@ -32,8 +32,10 @@ chunks = [
 
 # run KNN on a specific chunk
 # knn is an instance of KNNClassifier
-def process(chunk_id):
+# pass k here to avoid multiprocess issues with Windows
+def process(chunk_id, k):
     print("chunk", chunk_id, "starts")
+    knn.set_k(k)
     images, labels = chunks[chunk_id]
     length = images.shape[0]
     misclassified = 0
@@ -49,7 +51,6 @@ def process(chunk_id):
 
 # run KNN with specific k on all testing set
 def run_knn(k):
-    knn.set_k(k)
     # multi-process
     pool = Pool(processes=workers)
     # pool = Pool()  # use all core by default
@@ -58,7 +59,7 @@ def run_knn(k):
     for cid, chunk in enumerate(chunks[0:chunks_num]):
         # the reason why pass chunk_id instead of chunk to process() here
         # is to avoid additional memory copy caused
-        result.append(pool.apply_async(process, args=(cid,)))
+        result.append(pool.apply_async(process, args=(cid, k)))
     pool.close()
     pool.join()
     # reducing
