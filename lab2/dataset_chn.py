@@ -4,12 +4,12 @@ import string
 import os
 from os.path import exists, isfile, splitext, join
 import pickle
-from Sample import Sample
+from Sample import Sample, Labels, WordList
 import jieba
 import re
 import email
 from multiprocessing import Pool
-from utils import with_time, get_postfix, Labels, WordList
+from utils import with_time, get_postfix
 
 
 def removeStopWords(words: WordList, stopwords: WordList):

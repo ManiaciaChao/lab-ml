@@ -6,8 +6,8 @@ from os.path import exists, isfile, splitext, join
 import pickle
 import nltk
 from nltk.corpus import stopwords
-from Sample import Sample
-from utils import with_time, WordList
+from Sample import Sample, WordList
+from utils import with_time
 
 
 def removePunctuation(raw: str):

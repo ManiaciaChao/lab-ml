@@ -1,4 +1,7 @@
-from utils import Labels, WordList
+from typing import Dict, List
+
+Labels = Dict[str, str]
+WordList = List[str]
 
 
 class Sample:

@@ -1,13 +1,8 @@
 from time import time
 from os.path import join
 import numpy as np
-from Sample import Sample
 from math import floor
-from typing import Dict, List
-
-
-Labels = Dict[str, str]
-WordList = List[str]
+from Sample import Sample
 
 
 def with_time(func, args=[]):
