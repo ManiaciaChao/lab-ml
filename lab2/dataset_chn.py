@@ -100,7 +100,7 @@ def read_stopwords(filename: string):
     return stopwords
 
 
-def init(filename: string = "trec06c"):
+def init(filename: string = "trec06c") -> [Sample]:
     pkl_name = filename + ".pkl"
     if not exists(pkl_name):
         print("parsing files...")

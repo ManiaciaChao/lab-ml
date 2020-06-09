@@ -46,12 +46,12 @@ def readfiles(dirname: str = "english_email"):
     return results
 
 
-def init():
-    pkl_name = "eng.pkl"
+def init(dirname: string = "english_email") -> [Sample]:
+    pkl_name = dirname+".pkl"
     if not exists(pkl_name):
         nltk.download("stopwords")
         print("parsing files...")
-        sets = readfiles()
+        sets = readfiles(dirname)
         with open(pkl_name, 'wb') as f:
             print("saving dump...")
             pickle.dump(sets, f)
@@ -67,5 +67,5 @@ def init():
 
 if __name__ == "__main__":
     from random import randint
-    data = with_time(init)
+    data = with_time(init, ["enron1"])
     print(data[randint(0, len(data))].words)

@@ -3,6 +3,7 @@ from os.path import join
 import numpy as np
 from math import floor
 from Sample import Sample
+from random import shuffle
 
 
 def with_time(func, args=[]):
@@ -19,4 +20,5 @@ def get_postfix(path: str):
 
 def split_dataset(dataset=[Sample], rate=0.8):
     div = floor(len(dataset) * rate)
+    shuffle(dataset)
     return dataset[0:div], dataset[div:]
