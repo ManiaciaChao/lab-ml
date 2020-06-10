@@ -29,8 +29,10 @@ def normalize(raw: str):
 
 
 def readfiles(dirname: str = "english_email"):
+    print("readfiles")
     results = []
     subdirs = os.listdir(dirname)
+    subdirs.sort()
     for subdir in subdirs:
         filenames = os.listdir(join(dirname, subdir))
         filenames_full = map(lambda f: join(dirname, subdir, f), filenames)
@@ -41,7 +43,6 @@ def readfiles(dirname: str = "english_email"):
                 try:
                     results.append(Sample(normalize(f.read()), subdir))
                 except:
-                    init()
                     print(txt)
     return results
 
@@ -67,5 +68,5 @@ def init(dirname: string = "english_email") -> [Sample]:
 
 if __name__ == "__main__":
     from random import randint
-    data = with_time(init, ["enron1"])
+    data = with_time(init, ["enron_all"])
     print(data[randint(0, len(data))].words)

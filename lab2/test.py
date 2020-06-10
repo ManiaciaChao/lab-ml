@@ -1,45 +1,38 @@
+import numpy as np
+from multiprocessing import Pool
 from dataset_eng import init
 from Sample import Sample
-from utils import split_dataset
-import numpy as np
-from math import log2, floor
-from time import time
-from multiprocessing import Pool
+from utils import split_dataset, split_into_chunks
 from NaiveBayes import NaiveBayes
 
-
-# samples = init("english_200")
-samples, test = split_dataset(init("trec06c_less"), 1)
-print(len(samples))
-samples, tests = split_dataset(samples[0:1000], 0.8)
-
-# tests = init("english_email")[40:]
+# samples = init("enron_3000")
+# tests = init("enron_all")
+training_set, testing_set = split_dataset(init("enron_all"), 0.15)
+print("size of training set %d" % len(training_set))
+print("size of testing set %d" % len(testing_set))
 
 nb = NaiveBayes()
-print("fitting")
-nb.fit(samples)
-print("")
+nb.fit(training_set)
+nb.train()
 
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
-test_size = len(tests)  # 10000
-chunk_size = 8  # size of each chunk
-chunks_num = 24  # total number of chunks
-chunks = [
-    tests[i:i + chunk_size] for i in range(0, test_size, chunk_size)
-]  # split testing set into chunks for multi-process calculating
+chunk_size = 100  # size of each chunk
+chunks = list(split_into_chunks(testing_set, chunk_size))
+chunks_num = len(chunks)
+print("total", chunks_num, "chunks")
 
 
 def process(chunk_id):
-    print("chunk", chunk_id, "starts")
+    prompt = 'chunk {}/{}'.format(chunk_id, chunks_num)
+    print(prompt, "starts")
     tests = chunks[chunk_id]
     length = len(tests)
     misclassified = 0
     for test in tests:
-        predict = nb.judge(test.words)
-        # print(predict, test.label)
+        predict = nb.predict(test.words)
         if predict != test.label:
             misclassified += 1
-    print("chunk", chunk_id, "ends with", misclassified / length)
+    print(prompt, "ends with", misclassified / length)
     return misclassified
 
 
@@ -63,12 +56,4 @@ def run():
     return percent
 
 
-print(run())
-
-# misclassified = 0
-# for test in tests:
-#     predict = nb.judge(test.words)
-#     print(predict, test.label)
-#     if predict != test.label:
-#         misclassified += 1
-# print(misclassified / len(tests))
+print("misclassification rate %f" % run())

@@ -1,9 +1,9 @@
 from time import time
 from os.path import join
-import numpy as np
 from math import floor
-from Sample import Sample
 from random import shuffle
+from Sample import Sample
+import numpy as np
 
 
 def with_time(func, args=[]):
@@ -22,3 +22,8 @@ def split_dataset(dataset=[Sample], rate=0.8):
     div = floor(len(dataset) * rate)
     shuffle(dataset)
     return dataset[0:div], dataset[div:]
+
+
+def split_into_chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
