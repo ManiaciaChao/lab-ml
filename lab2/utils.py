@@ -18,8 +18,8 @@ def get_postfix(path: str):
     return "/".join(path.split("/")[-2:])
 
 
-def split_dataset(dataset=[Sample], rate=0.8):
-    div = floor(len(dataset) * rate)
+def split_dataset(dataset=[Sample], ratio=0.8):
+    div = floor(len(dataset) * ratio)
     shuffle(dataset)
     return dataset[0:div], dataset[div:]
 

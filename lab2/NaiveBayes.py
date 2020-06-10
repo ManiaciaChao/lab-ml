@@ -15,9 +15,9 @@ class NaiveBayes:
         self.__py_ham = 0
         self.__trained = False
         self.__alpha = alpha
+        self.total_words = 0
 
     def __bow_gen(self, words):
-        assert len(words) > 0, "size of words list should be more than 0"
         length = len(self.__all_words)
         bow = np.zeros(length)
         for word in words:
@@ -52,8 +52,7 @@ class NaiveBayes:
             print("\rgenerating SOW: %.1f%%" %
                   ((i+1)/self.__training_size*100), end='')
             all_words_set = all_words_set | set(sample.words)  # conjunction
-        print(" total words:", len(self.__all_words))
-
+        self.total_words = len(all_words_set)
         # turn SOW into a map in the from of value->key,
         # improving performance of constructing BOW
         self.__all_words = {k: v for v, k in enumerate(all_words_set)}

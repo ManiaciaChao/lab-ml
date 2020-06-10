@@ -5,6 +5,6 @@ WordList = List[str]
 
 
 class Sample:
-    def __init__(self, words: WordList, label: Labels):
+    def __init__(self, words: WordList, label: str):
         self.words = words
         self.label = label
