@@ -17,8 +17,7 @@ print("size of training set %d" % len(training_set))
 print("size of testing set %d" % len(testing_set))
 
 nb = NaiveBayes()
-nb.fit(training_set)
-nb.train()
+nb.fit(training_set).train()
 
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 chunk_size = 100  # size of each chunk

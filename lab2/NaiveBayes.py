@@ -52,6 +52,7 @@ class NaiveBayes:
             print("\rgenerating SOW: %.1f%%" %
                   ((i+1)/self.__training_size*100), end='')
             all_words_set = all_words_set | set(sample.words)  # conjunction
+        print("")  # print an EOL
         self.total_words = len(all_words_set)
         # turn SOW into a map in the from of value->key,
         # improving performance of constructing BOW
@@ -63,6 +64,7 @@ class NaiveBayes:
                   ((i+1)/self.__training_size*100), end='')
             self.__documents[sample.label].append(self.__bow_gen(sample.words))
         print("")  # print an EOL
+        return self
 
     def train(self):
         assert self.__training_size > 0, "fit() should be called before train()"
@@ -70,6 +72,7 @@ class NaiveBayes:
         self.__px_spam, self.__py_spam = self.__estimate("spam")
         self.__px_ham, self.__py_ham = self.__estimate("ham")
         self.__trained = True
+        return self
 
     def predict(self, input):
         assert self.__trained is True, "train() should be called before predict()"
