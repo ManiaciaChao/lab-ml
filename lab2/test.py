@@ -2,7 +2,7 @@ import numpy as np
 from multiprocessing import Pool
 from dataset_eng import init
 from Sample import Sample
-from utils import split_dataset, split_into_chunks
+from utils import split_dataset, split_into_chunks, with_time
 from NaiveBayes import NaiveBayes
 
 # samples = init("enron_3000")
@@ -17,7 +17,9 @@ print("size of training set %d" % len(training_set))
 print("size of testing set %d" % len(testing_set))
 
 nb = NaiveBayes()
-nb.fit(training_set).train()
+with_time(nb.fit, [training_set])
+with_time(nb.train, [])
+# nb.fit(training_set).train()
 
 workers = 6  # IMPORTANT: should be number of physical cores of your PC
 chunk_size = 100  # size of each chunk
@@ -73,7 +75,7 @@ def run():
     return total_TP, total_FP, total_TN, total_FN
 
 
-TP, FP, TN, FN = run()
+TP, FP, TN, FN = with_time(run)
 accuracy = (TP + TN) / (TP + FP + TN + FN)
 recall = TP / (TP+FN)
 precision = TP / (TP + FP)
@@ -82,7 +84,7 @@ f1_score = (2*recall*precision)/(recall+precision)
 cli_output = """result
 training name:  {train_name:s}
 testing name:   {test_name:s}
-split ratio:     {ratio:f}
+split ratio:    {ratio:f}
 training size:  {train_size:d}
 testing size:   {test_size:d}
 total words:    {total_words:d}
