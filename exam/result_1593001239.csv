@@ -1,0 +1,9 @@
+model,train_name,test_name,ratio,train,test,accuracy,recall,precision,f2_score
+GaussianNB,voice,voice,0.700000,2217,951,0.864353,0.877339,0.857724,0.867420
+BernoulliNB,voice,voice,0.700000,2217,951,0.846477,0.896050,0.817837,0.855159
+SVC,voice,voice,0.700000,2217,951,0.978970,0.981289,0.977226,0.979253
+LogisticRegression,voice,voice,0.700000,2217,951,0.966351,0.983368,0.951710,0.967280
+KNeighborsClassifier,voice,voice,0.700000,2217,951,0.970557,0.981289,0.961303,0.971193
+RandomForestClassifier,voice,voice,0.700000,2217,951,0.975815,0.977131,0.975104,0.976116
+BaggingClassifier,voice,voice,0.700000,2217,951,0.974763,0.977131,0.973085,0.975104
+DecisionTreeClassifier,voice,voice,0.700000,2217,951,0.960042,0.960499,0.960499,0.960499

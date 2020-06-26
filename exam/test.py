@@ -1,16 +1,20 @@
 from scipy.stats import norm
 import numpy as np
 from dataset import init
-from GaussianNB import GaussianNB
 from utils import shuffle_split
 from random import randint, shuffle
 from math import floor
+from time import time
+
+from GaussianNB import GaussianNB
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 features_list = init()
 split_ratio = 0.7
@@ -27,32 +31,18 @@ testing_set = sc.transform(testing_set)
 
 # naive bayes
 gnb = GaussianNB()
-gnb.fit(training_set, training_labels)
-
-# naive bayes
 bnb = BernoulliNB()
-bnb.fit(training_set, training_labels)
-
-# SVM
 svc = SVC()
-svc.fit(training_set, training_labels)
-
-# LogisticRegression
-# lir = LinearRegression()
-# lir.fit(training_set, training_labels)
-
-# LogisticRegression
 lor = LogisticRegression()
-lor.fit(training_set, training_labels)
-
+knn = KNeighborsClassifier()
 rf = RandomForestClassifier()
-rf.fit(training_set, training_labels)
+bc = BaggingClassifier()
+dt = DecisionTreeClassifier()
+
+classifiers = [gnb, bnb, svc, lor, knn, rf, bc, dt]
 
 
-classifiers = [lor]
-
-
-def run(classifier):
+def run(classifier, f):
     # here we assume that male is positive
     TP = FP = TN = FN = 0
     for i, test in enumerate(testing_set):
@@ -74,32 +64,38 @@ def run(classifier):
     accuracy = (TP + TN) / (TP + FP + TN + FN)
     recall = TP / (TP+FN)
     precision = TP / (TP + FP)
-    f1_score = (2*recall*precision)/(recall+precision)
+    f2_score = (2*recall*precision)/(recall+precision)
     cli_output = """\
 model:          {model:s}
 training name:  {train_name:s}
 testing name:   {test_name:s}
 split ratio:    {ratio:f}
 training size:  {train_size:d}
-testing size:   {test_size:d}
 accuracy:       {accuracy:f}
 recall:         {recall:f}
 precision:      {precision:f}
-f1_score:       {f1_score:f}
-    """.format(model=classifier.__class__.__name__,
-               train_name="voice", test_name="voice", ratio=split_ratio,
-               train_size=len(training_set), test_size=len(testing_set),
-               accuracy=accuracy, recall=recall,
-               precision=precision, f1_score=f1_score)
+f2_score:       {f2_score:f}
+""".format(model=classifier.__class__.__name__,
+           train_name="voice", test_name="voice", ratio=split_ratio,
+           train_size=len(training_set), test_size=len(testing_set),
+           accuracy=accuracy, recall=recall,
+           precision=precision, f2_score=f2_score)
     csv_output = ("{model:s},""{train_name:s},""{test_name:s},""{ratio:f},""{train_size:d},""{test_size:d},"
-                  "{accuracy:f},""{recall:f},""{precision:f},""{f1_score:f}"
+                  "{accuracy:f},""{recall:f},""{precision:f},""{f2_score:f}"
                   ).format(model=classifier.__class__.__name__,
                            train_name="voice", test_name="voice", ratio=split_ratio,
                            train_size=len(training_set), test_size=len(testing_set),
                            accuracy=accuracy, recall=recall,
-                           precision=precision, f1_score=f1_score)
+                           precision=precision, f2_score=f2_score)
     print(cli_output)
+    f.write(csv_output+"\n")
 
 
+filename = "result_%s.csv" % floor(time())
+f = open(filename, "a")
+header = "model,train_name,test_name,ratio,train,test,accuracy,recall,precision,f2_score"
+f.write(header+"\n")
 for classifier in classifiers:
-    run(classifier)
+    classifier.fit(training_set, training_labels)
+    run(classifier, f)
+f.close()
